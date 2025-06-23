@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema Avanzado de Ventas Digitales</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --sidebar-bg: #1F2937;
+            --main-bg: #F9FAFB;
+            --card-bg: #FFFFFF;
+            --text-primary: #111827;
+            --text-secondary: #6B7280;
+            --accent-color: #3B82F6;
+        }
+        body { background-color: var(--main-bg); font-family: 'Inter', sans-serif; }
+        .platform-badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 600; text-transform: uppercase; }
+        .badge-netflix { background-color: #E50914; color: white; }
+        .badge-disney { background-color: #113CCF; color: white; }
+        .badge-prime { background-color: #00A8E1; color: white; }
+        .badge-spotify { background-color: #1DB954; color: white; }
+        .badge-movistar { background-color: #0099E8; color: white; }
+        .badge-iptv { background-color: #FF9800; color: white; }
+        
+        .status-badge { padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; text-align: center; }
+        .status-paid { background-color: #D1FAE5; color: #065F46; }
+        .status-pending { background-color: #FEF3C7; color: #92400E; }
+        .status-expired { background-color: #FEE2E2; color: #991B1B; }
+
+        .inventory-card { border-left-width: 4px; }
+        .inventory-low { border-left-color: #EF4444; }
+        .inventory-medium { border-left-color: #F59E0B; }
+        .inventory-high { border-left-color: #10B981; }
+        
+        @import url('https://rsms.me/inter/inter.css');
+    </style>
+</head>
+<body class="bg-gray-100">
+
+    <div class="flex h-screen">
+        <div class="w-64 bg-gray-800 text-white flex flex-col">
+            <div class="px-6 py-4 border-b border-gray-700 flex items-center">
+                <i class="fas fa-satellite-dish mr-3 text-2xl text-blue-400"></i>
+                <h1 class="text-xl font-bold">Ventas Digitales</h1>
+            </div>
+            <nav class="flex-1 px-4 py-4 space-y-2">
+                <a href="#dashboard" class="flex items-center px-4 py-2 text-gray-300 hover:bg-gray-700 hover:text-white rounded-md">
+                    <i class="fas fa-chart-line w-6"></i><span>Dashboard</span>
+                </a>
+                <a href="#new-sale" class="flex items-center px-4 py-2 text-gray-300 hover:bg-gray-700 hover:text-white rounded-md">
+                    <i class="fas fa-cart-plus w-6"></i><span>Nueva Venta</span>
+                </a>
+                <a href="#inventory" class="flex items-center px-4 py-2 text-gray-300 hover:bg-gray-700 hover:text-white rounded-md">
+                    <i class="fas fa-boxes-stacked w-6"></i><span>Inventario</span>
+                </a>
+                <a href="#sales-history" class="flex items-center px-4 py-2 text-gray-300 hover:bg-gray-700 hover:text-white rounded-md">
+                    <i class="fas fa-history w-6"></i><span>Historial de Ventas</span>
+                </a>
+            </nav>
+        </div>
+
+        <main class="flex-1 p-6 lg:p-10 overflow-y-auto">
+            
+            <section id="dashboard">
+                <h2 class="text-3xl font-bold text-gray-800 mb-6">Dashboard</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="bg-white p-6 rounded-lg shadow-md flex items-center">
+                        <i class="fas fa-dollar-sign text-3xl text-green-500 bg-green-100 p-4 rounded-full"></i>
+                        <div class="ml-4">
+                            <p class="text-gray-500">Ingresos Totales</p>
+                            <p id="totalRevenue" class="text-2xl font-bold text-gray-900">$0.00</p>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-md flex items-center">
+                        <i class="fas fa-shopping-cart text-3xl text-blue-500 bg-blue-100 p-4 rounded-full"></i>
+                        <div class="ml-4">
+                            <p class="text-gray-500">Ventas (Este Mes)</p>
+                            <p id="monthlySales" class="text-2xl font-bold text-gray-900">0</p>
+                        </div>
+                    </div>
+                     <div class="bg-white p-6 rounded-lg shadow-md flex items-center">
+                        <i class="fas fa-exclamation-triangle text-3xl text-yellow-500 bg-yellow-100 p-4 rounded-full"></i>
+                        <div class="ml-4">
+                            <p class="text-gray-500">Cuentas por Vencer</p>
+                            <p id="expiringSoon" class="text-2xl font-bold text-gray-900">0</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="new-sale" class="mt-10 bg-white p-8 rounded-lg shadow-md">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">Registrar Nueva Venta</h2>
+                <form id="saleForm" class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <input type="text" id="customerName" placeholder="Nombre del Cliente" class="p-3 border rounded-md w-full" required>
+                        <input type="tel" id="customerPhone" placeholder="Celular (código país + número, ej: 519...)" class="p-3 border rounded-md w-full" required>
+                    </div>
+                    <select id="platform" class="p-3 border rounded-md w-full" required>
+                        <option value="">-- Seleccionar Plataforma --</option>
+                        <option value="netflix">Netflix</option>
+                        <option value="disney">Disney+</option>
+                        <option value="prime">Amazon Prime Video</option>
+                        <option value="spotify">Spotify</option>
+                        <option value="movistar">Movistar Play</option>
+                        <option value="iptv">IPTV</option>
+                    </select>
+                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <input type="email" id="accountEmail" placeholder="Correo de la Cuenta" class="p-3 border rounded-md w-full" required>
+                        <input type="text" id="accountPassword" placeholder="Contraseña de la Cuenta" class="p-3 border rounded-md w-full" required>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <input type="number" id="price" placeholder="Precio (S/.)" class="p-3 border rounded-md w-full" step="0.01" required>
+                        <input type="date" id="expiryDate" class="p-3 border rounded-md w-full text-gray-500" required>
+                        <select id="paymentStatus" class="p-3 border rounded-md w-full" required>
+                            <option value="paid">Pagado</option>
+                            <option value="pending">Pendiente</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-md hover:bg-blue-700 transition duration-300">
+                        <i class="fas fa-save mr-2"></i>Guardar Venta
+                    </button>
+                </form>
+            </section>
+
+            <section id="inventory" class="mt-10">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">Gestión de Inventario</h2>
+                 <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+                    <h3 class="font-bold mb-4">Añadir Cuentas al Inventario</h3>
+                    <div class="flex items-center gap-4">
+                        <select id="inventoryPlatform" class="p-2 border rounded-md flex-1">
+                            <option value="netflix">Netflix</option>
+                            <option value="disney">Disney+</option>
+                            <option value="prime">Prime Video</option>
+                            <option value="spotify">Spotify</option>
+                            <option value="movistar">Movistar Play</option>
+                            <option value="iptv">IPTV</option>
+                        </select>
+                        <input type="number" id="inventoryQuantity" placeholder="Cantidad" class="p-2 border rounded-md w-24" min="1">
+                        <button id="addInventoryBtn" class="bg-green-500 text-white font-bold py-2 px-4 rounded-md hover:bg-green-600"><i class="fas fa-plus"></i> Añadir</button>
+                    </div>
+                </div>
+                <div id="inventoryList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    </div>
+            </section>
+            
+            <section id="sales-history" class="mt-10">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">Historial de Ventas</h2>
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <input type="text" id="searchInput" placeholder="Buscar por cliente o plataforma..." class="p-3 border rounded-md w-full mb-4">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full bg-white">
+                            <thead class="bg-gray-200">
+                                <tr>
+                                    <th class="py-3 px-4 text-left">Cliente</th>
+                                    <th class="py-3 px-4 text-left">Plataforma</th>
+                                    <th class="py-3 px-4 text-left">Vencimiento</th>
+                                    <th class="py-3 px-4 text-left">Estado Pago</th>
+                                    <th class="py-3 px-4 text-center">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="salesTableBody">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- BASE DE DATOS LOCAL ---
+        let sales = JSON.parse(localStorage.getItem('sales')) || [];
+        let inventory = JSON.parse(localStorage.getItem('inventory')) || {
+            netflix: 0, disney: 0, prime: 0, spotify: 0, movistar: 0, iptv: 0
+        };
+
+        // --- REFERENCIAS A ELEMENTOS DEL DOM ---
+        const saleForm = document.getElementById('saleForm');
+        const salesTableBody = document.getElementById('salesTableBody');
+        const searchInput = document.getElementById('searchInput');
+        const inventoryList = document.getElementById('inventoryList');
+        const addInventoryBtn = document.getElementById('addInventoryBtn');
+        const inventoryPlatform = document.getElementById('inventoryPlatform');
+        const inventoryQuantity = document.getElementById('inventoryQuantity');
+        
+        const totalRevenueEl = document.getElementById('totalRevenue');
+        const monthlySalesEl = document.getElementById('monthlySales');
+        const expiringSoonEl = document.getElementById('expiringSoon');
+
+        // --- PLATFORM CONFIG ---
+        const platformConfig = {
+            netflix: { name: 'Netflix', class: 'badge-netflix', icon: 'fab fa-netflix' },
+            disney: { name: 'Disney+', class: 'badge-disney', icon: 'fas fa-magic' },
+            prime: { name: 'Prime Video', class: 'badge-prime', icon: 'fab fa-amazon' },
+            spotify: { name: 'Spotify', class: 'badge-spotify', icon: 'fab fa-spotify' },
+            movistar: { name: 'Movistar Play', class: 'badge-movistar', icon: 'fas fa-tv' },
+            iptv: { name: 'IPTV', class: 'badge-iptv', icon: 'fas fa-broadcast-tower' }
+        };
+        
+        // --- FUNCIONES ---
+
+        const saveAndRender = () => {
+            localStorage.setItem('sales', JSON.stringify(sales));
+            localStorage.setItem('inventory', JSON.stringify(inventory));
+            renderSales();
+            renderInventory();
+            renderDashboard();
+        };
+
+        const renderDashboard = () => {
+            const totalRevenue = sales.reduce((sum, sale) => sale.status === 'paid' ? sum + parseFloat(sale.price) : sum, 0);
+            totalRevenueEl.textContent = `S/ ${totalRevenue.toFixed(2)}`;
+
+            const currentMonth = new Date().getMonth();
+            const currentYear = new Date().getFullYear();
+            const monthlySales = sales.filter(sale => {
+                const saleDate = new Date(sale.date);
+                return saleDate.getMonth() === currentMonth && saleDate.getFullYear() === currentYear;
+            }).length;
+            monthlySalesEl.textContent = monthlySales;
+
+            const today = new Date();
+            const sevenDaysFromNow = new Date();
+            sevenDaysFromNow.setDate(today.getDate() + 7);
+            const expiringSoon = sales.filter(sale => {
+                const expiryDate = new Date(sale.expiryDate);
+                return expiryDate > today && expiryDate <= sevenDaysFromNow;
+            }).length;
+            expiringSoonEl.textContent = expiringSoon;
+        };
+
+        const renderInventory = () => {
+            inventoryList.innerHTML = '';
+            for (const key in inventory) {
+                const config = platformConfig[key];
+                const count = inventory[key];
+                let stockStatus = 'inventory-high';
+                if (count <= 5) stockStatus = 'inventory-low';
+                else if (count <= 20) stockStatus = 'inventory-medium';
+
+                const card = `
+                    <div class="bg-white p-4 rounded-lg shadow-md flex items-center justify-between inventory-card ${stockStatus}">
+                        <div class="flex items-center">
+                            <i class="${config.icon} text-3xl mr-4 ${config.class.replace('badge', 'text')}"></i>
+                            <div>
+                                <p class="font-bold text-gray-800">${config.name}</p>
+                                <p class="text-sm text-gray-500">Cuentas disponibles</p>
+                            </div>
+                        </div>
+                        <p class="text-3xl font-bold text-gray-800">${count}</p>
+                    </div>`;
+                inventoryList.innerHTML += card;
+            }
+        };
+
+        const renderSales = (filter = '') => {
+            salesTableBody.innerHTML = '';
+            const filteredSales = sales.filter(sale => 
+                sale.customer.toLowerCase().includes(filter.toLowerCase()) ||
+                sale.platform.toLowerCase().includes(filter.toLowerCase())
+            );
+
+            if (filteredSales.length === 0) {
+                salesTableBody.innerHTML = `<tr><td colspan="5" class="text-center py-10 text-gray-500">No hay ventas registradas.</td></tr>`;
+                return;
+            }
+
+            filteredSales.sort((a, b) => new Date(b.date) - new Date(a.date)).forEach(sale => {
+                const config = platformConfig[sale.platform];
+                const expiryDate = new Date(sale.expiryDate);
+                const today = new Date();
+                today.setHours(0,0,0,0);
+                expiryDate.setHours(0,0,0,0);
+                
+                let expiryClass = '';
+                if (expiryDate < today) {
+                    expiryClass = 'text-red-600 font-bold';
+                } else if ((expiryDate - today) / (1000 * 60 * 60 * 24) <= 7) {
+                    expiryClass = 'text-yellow-600 font-bold';
+                }
+
+                const formattedPhone = sale.phone.replace(/[^0-9]/g, '');
+                const message = `Hola ${sale.customer}, te envío los datos de tu cuenta ${config.name}:\n\nUsuario: ${sale.accountEmail}\nContraseña: ${sale.accountPassword}\n\nGracias por tu compra!`;
+                const whatsappLink = `https://api.whatsapp.com/send?phone=${formattedPhone}&text=${encodeURIComponent(message)}`;
+                const telegramLink = `https://t.me/share/url?url=${encodeURIComponent(message)}`;
+
+                const row = `
+                    <tr class="border-b hover:bg-gray-50">
+                        <td class="py-4 px-4">
+                            <p class="font-bold">${sale.customer}</p>
+                            <p class="text-sm text-gray-500">${sale.phone}</p>
+                        </td>
+                        <td class="py-4 px-4"><span class="platform-badge ${config.class}">${config.name}</span></td>
+                        <td class="py-4 px-4 ${expiryClass}">${new Date(sale.expiryDate).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}</td>
+                        <td class="py-4 px-4"><span class="status-badge status-${sale.status}">${sale.status === 'paid' ? 'Pagado' : 'Pendiente'}</span></td>
+                        <td class="py-4 px-4 text-center">
+                            <a href="${whatsappLink}" target="_blank" class="text-green-500 hover:text-green-700 mr-3" title="Enviar por WhatsApp"><i class="fab fa-whatsapp text-xl"></i></a>
+                            <a href="${telegramLink}" target="_blank" class="text-blue-500 hover:text-blue-700 mr-3" title="Enviar por Telegram"><i class="fab fa-telegram-plane text-xl"></i></a>
+                            <button class="text-red-500 hover:text-red-700" onclick="deleteSale('${sale.id}')" title="Eliminar Venta"><i class="fas fa-trash-alt text-xl"></i></button>
+                        </td>
+                    </tr>
+                `;
+                salesTableBody.innerHTML += row;
+            });
+        };
+
+        window.deleteSale = (id) => {
+            if (confirm('¿Estás seguro de que quieres eliminar esta venta? Esta acción no se puede deshacer.')) {
+                const saleIndex = sales.findIndex(s => s.id === id);
+                if(saleIndex > -1){
+                    const sale = sales[saleIndex];
+                    inventory[sale.platform]++; // Devolver la cuenta al inventario
+                    sales = sales.filter(s => s.id !== id);
+                    saveAndRender();
+                }
+            }
+        };
+
+        // --- EVENT LISTENERS ---
+        saleForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const platform = document.getElementById('platform').value;
+
+            if (inventory[platform] <= 0) {
+                alert(`No hay inventario disponible para ${platformConfig[platform].name}. Por favor, añade más cuentas.`);
+                return;
+            }
+
+            const newSale = {
+                id: `sale_${Date.now()}`,
+                customer: document.getElementById('customerName').value,
+                phone: document.getElementById('customerPhone').value,
+                platform,
+                accountEmail: document.getElementById('accountEmail').value,
+                accountPassword: document.getElementById('accountPassword').value,
+                price: document.getElementById('price').value,
+                expiryDate: document.getElementById('expiryDate').value,
+                status: document.getElementById('paymentStatus').value,
+                date: new Date().toISOString()
+            };
+            
+            sales.push(newSale);
+            inventory[platform]--; // Reducir inventario
+            
+            saleForm.reset();
+            document.getElementById('expiryDate').valueAsDate = new Date();
+            
+            saveAndRender();
+        });
+        
+        searchInput.addEventListener('input', (e) => renderSales(e.target.value));
+
+        addInvent
